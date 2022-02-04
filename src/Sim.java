@@ -13,6 +13,7 @@ public class Sim {
     private int clock;
     private ArrayList<Inspector> inspectors = new ArrayList<Inspector>();
     private ArrayList<WorkStation> workStations = new ArrayList<WorkStation>();
+    private ArrayList<Buffer> buffers = new ArrayList<Buffer>();
     public ArrayList<Event> futureEventList = new ArrayList<Event>();
     private Random rand = new Random();
 
@@ -30,7 +31,17 @@ public class Sim {
         workStations.add(workStation2);
         WorkStation workStation3 = new WorkStation(3, new boolean[]{false, true, true});
         workStations.add(workStation3);
-
+        for (WorkStation work: workStations) {
+            if(work.getComponents()[0]){
+                buffers.add(new Buffer(work.getNum(), 1));
+            }
+            if(work.getComponents()[1]){
+                buffers.add(new Buffer(work.getNum(), 2));
+            }
+            if(work.getComponents()[2]){
+                buffers.add(new Buffer(work.getNum(), 3));
+            }
+        }
     }
 
     public int getComponentsCompleted() {
@@ -55,6 +66,13 @@ public class Sim {
             this.update();
         }
         System.out.println("made "+this.getComponentsCompleted() + " Components" );
+        for (Buffer buffer: buffers) {
+            System.out.println("Buffer " +buffer.getComponentNum()+ " for workstation"+ buffer.getWorkStation()+" contains");
+            for (Component comp: buffer.getCompBuffer()) {
+                System.out.println("comp " + comp.getNum() );
+            }
+
+        }
 
 
     }
@@ -62,10 +80,11 @@ public class Sim {
     public int generateServiceTime() {
         return new Random().nextInt(10);
     }
-
-    ;
-
     public void update() {
+        if(futureEventList.size() == 0){
+            clock = end;
+            return;
+        }
         Event currentEvent = futureEventList.get(0);
         if(currentEvent.getTime() > end){
             clock = end;
@@ -91,17 +110,40 @@ public class Sim {
         if (currentEvent.getEntity() == Entity.Inspector) {
             for (Inspector insp : inspectors) {
                 if (insp.getNum() == currentEvent.getNum()) {
-                    System.out.println("Inspector " + insp.getNum()+" Created Component :" + clock + " :" + currentEvent.getTime());
-                    insp.giveComponent();
+                    System.out.println("Inspector " + insp.getNum()+" inspected Component "+ insp.getComponent().getNum() +" :" + clock + " :" + currentEvent.getTime());
                     componentsCompleted++;
-                    insp.acceptComponent(this.generateComponent(insp.getNum()));
-                    futureEventList.add(new Event(this.generateServiceTime() + clock, Entity.Inspector, insp.getNum()));
+                    if(allocateToBuffer(insp.getComponent())){
+                      insp.giveComponent();
+                      insp.acceptComponent(this.generateComponent(insp.getNum()));
+                      futureEventList.add(new Event(this.generateServiceTime() + clock, Entity.Inspector, insp.getNum()));
+                    }
+                    else{
+                        insp.setBlocked(true);
+                        System.out.println("Inspector " +insp.getNum()+ " is blocked");
+                    }
+
                 }
             }
             futureEventList.remove(0);
             futureEventList.sort(Comparator.comparingInt(Event::getTime));
 
         }
+    }
+    public boolean allocateToBuffer(Component component){
+        ArrayList<Buffer> checkArray = new ArrayList<Buffer>();
+        for (Buffer buffer:buffers) {
+            if(buffer.getComponentNum() == component.getNum()){
+                checkArray.add(buffer);
+            }
+        }
+        checkArray.sort(Comparator.comparingInt(Buffer::getBufferSize));
+        for (Buffer sortedBuffer:checkArray) {
+            if(sortedBuffer.getBufferSize() < 2){
+                sortedBuffer.addComponent(component);
+                return true;
+            }
+        }
+        return false;
     }
     public Component generateComponent(int inspectorNum){
         if(inspectorNum ==1){
@@ -123,7 +165,7 @@ public class Sim {
 
 
     public static void main(String[] args) {
-        Sim mainSimulation = new Sim(20);
+        Sim mainSimulation = new Sim(50);
         mainSimulation.initialize();
 
 

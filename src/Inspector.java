@@ -1,5 +1,6 @@
 public class Inspector {
     private int num;
+
     private Component component;
     private boolean blocked;
     private boolean inspecting;
@@ -29,5 +30,9 @@ public class Inspector {
     public int getNum(){
         return num;
     }
+    public Component getComponent() {
+        return component;
+    }
+
 
 }

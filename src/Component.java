@@ -5,5 +5,8 @@ public class Component {
         this.num = num;
 
     }
+    public int getNum() {
+        return num;
+    }
 
 }
