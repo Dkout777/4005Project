@@ -53,6 +53,10 @@ public class Sim {
         return end;
     }
 
+    /**
+     * this method initializes the simulation, first by giving the inspectors a component and then running the update
+     * function until the time runs out.
+     */
     public void initialize() {
         for (Inspector inspector : inspectors) {
             inspector.acceptComponent(this.generateComponent(inspector.getNum()));
@@ -60,12 +64,15 @@ public class Sim {
             futureEventList.add(new Event(generateServiceTime() + clock, Entity.Inspector, inspector.getNum()));
         }
         futureEventList.sort(Comparator.comparingInt(Event::getTime));
+        // THe main simulation loop, it lasts until the clock reaches end
         while(this.getClock() < this.getEnd()){
             this.update();
         }
+        //This  section prints out all the statistics about the current run
         System.out.println("----------------statistics-------------" );
         System.out.println("Inspected "+this.getComponentsCompleted() + " Components" );
         System.out.println("made "+productsCompleted + " products" );
+        System.out.println("Product throughput was "+(float)productsCompleted/end);
         for (Buffer buffer: buffers) {
             System.out.println("Buffer " +buffer.getComponentNum()+ " for workstation"+ buffer.getWorkStation()+" contains");
             for (Component comp: buffer.getCompBuffer()) {
@@ -77,8 +84,13 @@ public class Sim {
 
     }
 
+    /**
+     * This generates a random number between 1 and 10 to use as a service time. This is temporary until the data
+     * collection phase is done.
+     * @return Random int
+     */
     public int generateServiceTime() {
-        return new Random().nextInt(10);
+        return new Random().nextInt(10) +1;
     }
     public void update() {
         if(futureEventList.size() == 0){
@@ -112,6 +124,8 @@ public class Sim {
                       insp.acceptComponent(this.generateComponent(insp.getNum()));
                       futureEventList.add(new Event(this.generateServiceTime() + clock, Entity.Inspector, insp.getNum()));
                       System.out.println("Time: " +clock+ " : Inspector "+ insp.getNum()+" Started inspecting Component " + insp.getComponent().getNum());
+                      futureEventList.sort(Comparator.comparingInt(Event::getTime));
+                      insp.setInspecting(false);
                     }
                     else{
                         insp.setBlocked(true);
@@ -135,6 +149,11 @@ public class Sim {
         futureEventList.remove(0);
         futureEventList.sort(Comparator.comparingInt(Event::getTime));
     }
+
+    /**
+     * THis method is responsible for updating the inspectors. It loops through all inspectors, if blocked it will
+     * attempt to put away the component again, if not inspecting then it will assign a new component
+     */
     public void updateInspectors(){
         // tries tp unblock
         for(Inspector insp:inspectors) {
@@ -155,6 +174,12 @@ public class Sim {
         }
 
     }
+
+    /**
+     * This method is responsible for updating the workstations, it loops through an checks if they aren't working, if
+     * not it will loop through it's buffers to check if it can start. If each buffer has at least 1 item, it will
+     * remove 1 item from each buffer and add them to the workstation array, and set itself to working.
+     */
     public void updateWorkStations(){
         for (WorkStation work: workStations) {
             if (!work.isWorking()) {
@@ -182,6 +207,14 @@ public class Sim {
             }
         }
     }
+
+    /**
+     * This method is used to allocate a component to one of the buffers. It first creates  a temp list cotnaining all
+     * buffers that hold that component. It then sorts it based on how big each buffer is. It then attempts to add the
+     * component to each buffer until it succeeds.
+     * @param component the component that is being added
+     * @return boolean to let know if it suceeded in adding to buffer
+     */
     public boolean allocateToBuffer(Component component){
         ArrayList<Buffer> checkArray = new ArrayList<Buffer>();
         for (Buffer buffer:buffers) {
@@ -198,6 +231,12 @@ public class Sim {
         }
         return false;
     }
+
+    /**
+     * If inspectorNum is 1 it returns 1 else it randomly chooses between 2 or 3
+     * @param inspectorNum
+     * @return
+     */
     public Component generateComponent(int inspectorNum){
         if(inspectorNum ==1){
             return (new Component(1));
@@ -218,7 +257,7 @@ public class Sim {
 
 
     public static void main(String[] args) {
-        Sim mainSimulation = new Sim(50);
+        Sim mainSimulation = new Sim(100);
         mainSimulation.initialize();
 
 
