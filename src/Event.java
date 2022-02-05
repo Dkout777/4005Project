@@ -25,6 +25,10 @@ public class Event {
     public void setNum(int num) {
         this.num = num;
     }
+    public String eventToString(){
+        String s = entity +" " + num +" " + time;
+        return  s;
+    }
 
 
 

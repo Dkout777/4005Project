@@ -6,7 +6,7 @@ public class Sim {
 
     private int componentsCompleted = 0;
     private int end;
-    int productsCompleted = 0;
+    int productsCompleted[] = {0,0,0};
 
     private int clock;
     private ArrayList<Inspector> inspectors = new ArrayList<Inspector>();
@@ -61,23 +61,41 @@ public class Sim {
         for (Inspector inspector : inspectors) {
             inspector.acceptComponent(this.generateComponent(inspector.getNum()));
             System.out.println("Time: " +clock+ " : Inspector "+ inspector.getNum()+" Started inspecting Component " + inspector.getComponent().getNum());
-            futureEventList.add(new Event(generateServiceTime() + clock, Entity.Inspector, inspector.getNum()));
+            futureEventList.add(new Event(generateInspectorServiceTime() + clock, Entity.Inspector, inspector.getNum()));
         }
         futureEventList.sort(Comparator.comparingInt(Event::getTime));
         // THe main simulation loop, it lasts until the clock reaches end
+        int x = 0;
         while(this.getClock() < this.getEnd()){
+           // System.out.println("Cycle: " + x);
+           // if(futureEventList.size()>0)
+               // System.out.println("current event: "+futureEventList.get(0).eventToString());
             this.update();
+            futureEventList.sort(Comparator.comparingInt(Event::getTime));
+           // if(futureEventList.size()>0)
+              //  System.out.println("Next event: "+futureEventList.get(0).eventToString());
+           // x++;
         }
         //This  section prints out all the statistics about the current run
+        for (Inspector insp:inspectors) {
+            if(insp.getBlocked()){
+                insp.addIdle(end);
+            }
+        }
         System.out.println("----------------statistics-------------" );
         System.out.println("Inspected "+this.getComponentsCompleted() + " Components" );
-        System.out.println("made "+productsCompleted + " products" );
-        System.out.println("Product throughput was "+(float)productsCompleted/end);
+        System.out.println("Workstation 1 made  "+productsCompleted[0] + " products" );
+        System.out.println("Workstation 2 made  "+productsCompleted[1] + " products" );
+        System.out.println("Workstation 3 made "+productsCompleted[2] + " products" );
+        System.out.println("Product throughput was "+(float)(productsCompleted[0] + productsCompleted[1] + productsCompleted[2])/end);
         for (Buffer buffer: buffers) {
             System.out.println("Buffer " +buffer.getComponentNum()+ " for workstation"+ buffer.getWorkStation()+" contains");
             for (Component comp: buffer.getCompBuffer()) {
                 System.out.println("comp " + comp.getNum() );
             }
+        }
+        for (Inspector insp: inspectors) {
+            System.out.println("Inspector "+ insp.getNum() + " Idle time was " + insp.getIdleTime());
 
         }
 
@@ -89,7 +107,10 @@ public class Sim {
      * collection phase is done.
      * @return Random int
      */
-    public int generateServiceTime() {
+    public int generateInspectorServiceTime() {
+        return new Random().nextInt(10) +1;
+    }
+    public int generateWorkstationServiceTime() {
         return new Random().nextInt(10) +1;
     }
     public void update() {
@@ -121,14 +142,10 @@ public class Sim {
                     componentsCompleted++;
                     if(allocateToBuffer(insp.getComponent())){
                       insp.giveComponent();
-                      insp.acceptComponent(this.generateComponent(insp.getNum()));
-                      futureEventList.add(new Event(this.generateServiceTime() + clock, Entity.Inspector, insp.getNum()));
-                      System.out.println("Time: " +clock+ " : Inspector "+ insp.getNum()+" Started inspecting Component " + insp.getComponent().getNum());
-                      futureEventList.sort(Comparator.comparingInt(Event::getTime));
-                      insp.setInspecting(false);
                     }
                     else{
                         insp.setBlocked(true);
+                        insp.setIdleStart(clock);
                         System.out.println("Time: " +clock+ " : Inspector "+ insp.getNum()+" is blocked ");
                     }
 
@@ -141,7 +158,7 @@ public class Sim {
                 if(currentEvent.getNum() == workStation.num){
                     workStation.clearComponents();
                     System.out.println("Time: " +clock+ " : Workstation "+ workStation.getNum()+" Finished making a product ");
-                    productsCompleted++;
+                    productsCompleted[workStation.num-1]++;
                     workStation.setWorking(false);
                 }
             }
@@ -161,15 +178,17 @@ public class Sim {
                 if(allocateToBuffer(insp.getComponent())){
                     insp.giveComponent();
                     insp.setBlocked(false);
-                    insp.setInspecting(false);
+                    insp.addIdle(clock);
                     System.out.println("Time: " +clock+ " : Inspector "+ insp.getNum()+" is unblocked ");
+                    insp.acceptComponent(this.generateComponent(insp.getNum()));
+                    futureEventList.add(new Event(this.generateInspectorServiceTime() + clock, Entity.Inspector, insp.getNum()));
+                    System.out.println("Time: " +clock+ " : Inspector "+ insp.getNum()+" Started inspecting Component " + insp.getComponent().getNum());
                 }
             }
-            if (!insp.isInspecting()) {
+            else if (!insp.isInspecting()) {
                 insp.acceptComponent(this.generateComponent(insp.getNum()));
-                futureEventList.add(new Event(this.generateServiceTime() + clock, Entity.Inspector, insp.getNum()));
+                futureEventList.add(new Event(this.generateInspectorServiceTime() + clock, Entity.Inspector, insp.getNum()));
                 System.out.println("Time: " +clock+ " : Inspector "+ insp.getNum()+" Started inspecting Component " + insp.getComponent().getNum());
-                insp.setInspecting(true);
             }
         }
 
@@ -201,7 +220,7 @@ public class Sim {
                     }
                     work.setWorking(true);
                     System.out.println("Time: " +clock+ " : WorkStation "+ work.getNum()+" started working ");
-                    futureEventList.add(new Event(generateServiceTime() + clock, Entity.Workstation, work.getNum()));
+                    futureEventList.add(new Event(generateWorkstationServiceTime() + clock, Entity.Workstation, work.getNum()));
 
                 }
             }
@@ -224,7 +243,11 @@ public class Sim {
         }
         checkArray.sort(Comparator.comparingInt(Buffer::getBufferSize));
         for (Buffer sortedBuffer:checkArray) {
+            System.out.println(sortedBuffer.getBufferSize());
+        }
+        for (Buffer sortedBuffer:checkArray) {
             if(sortedBuffer.getBufferSize() < 2){
+                System.out.println("added to buffer " + sortedBuffer.getComponentNum() +" Belonging to Workstation " +  sortedBuffer.getWorkStation());
                 sortedBuffer.addComponent(component);
                 return true;
             }
@@ -257,7 +280,7 @@ public class Sim {
 
 
     public static void main(String[] args) {
-        Sim mainSimulation = new Sim(100);
+        Sim mainSimulation = new Sim(1000);
         mainSimulation.initialize();
 
 

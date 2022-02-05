@@ -1,6 +1,7 @@
 public class Inspector {
     private int num;
-
+    private int idleTime = 0;
+    private int idleStart;
     private Component component;
     private boolean blocked;
     private boolean inspecting;
@@ -19,7 +20,9 @@ public class Inspector {
         inspecting = false;
         return give;
     }
-
+    public void setIdleStart(int idleStart) {
+        this.idleStart = idleStart;
+    }
     public void setBlocked(boolean bool){
         blocked = bool;
     }
@@ -35,6 +38,13 @@ public class Inspector {
     }
     public void setInspecting(boolean inspecting) {
         this.inspecting = inspecting;
+    }
+    public void addIdle(int idleEnd){
+        idleTime = idleTime + (idleEnd-idleStart);
+        idleStart = -1;
+    }
+    public int getIdleTime() {
+        return idleTime;
     }
 
 
