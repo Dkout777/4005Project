@@ -56,6 +56,7 @@ public class Sim {
     public void initialize() {
         for (Inspector inspector : inspectors) {
             inspector.acceptComponent(this.generateComponent(inspector.getNum()));
+            System.out.println("Time: " +clock+ " : Inspector "+ inspector.getNum()+" Inspecting Component " + inspector.getComponent().getNum());
             futureEventList.add(new Event(generateServiceTime() + clock, Entity.Inspector, inspector.getNum()));
         }
         futureEventList.sort(Comparator.comparingInt(Event::getTime));
@@ -103,16 +104,17 @@ public class Sim {
         if (currentEvent.getEntity() == Entity.Inspector) {
             for (Inspector insp : inspectors) {
                 if (insp.getNum() == currentEvent.getNum()) {
-                    System.out.println("Inspector " + insp.getNum()+" inspected Component "+ insp.getComponent().getNum() +" :" + clock + " :" + currentEvent.getTime());
+                    System.out.println("Time: " +clock+ " : Inspector "+ insp.getNum()+" Finished Inspecting Component " + insp.getComponent().getNum());
                     componentsCompleted++;
                     if(allocateToBuffer(insp.getComponent())){
                       insp.giveComponent();
                       insp.acceptComponent(this.generateComponent(insp.getNum()));
                       futureEventList.add(new Event(this.generateServiceTime() + clock, Entity.Inspector, insp.getNum()));
+                      System.out.println("Time: " +clock+ " : Inspector "+ insp.getNum()+" Inspecting Component " + insp.getComponent().getNum());
                     }
                     else{
                         insp.setBlocked(true);
-                        System.out.println("Inspector " +insp.getNum()+ " is blocked");
+                        System.out.println("Time: " +clock+ " : Inspector "+ insp.getNum()+" is blocked ");
                     }
 
                 }
@@ -123,7 +125,7 @@ public class Sim {
             for(WorkStation workStation: workStations){
                 if(currentEvent.getNum() == workStation.num){
                     workStation.clearComponents();
-                    System.out.println("Workstation " + workStation.getNum()+" produced a product "+" :" + clock + " :" + currentEvent.getTime());
+                    System.out.println("Time: " +clock+ " : Workstation "+ workStation.getNum()+" Finished making a product ");
                     productsCompleted++;
                     workStation.setWorking(false);
                 }
@@ -133,10 +135,20 @@ public class Sim {
         futureEventList.sort(Comparator.comparingInt(Event::getTime));
     }
     public void updateInspectors(){
+        // tries tp unblock
         for(Inspector insp:inspectors) {
+            if(insp.getBlocked()){
+                if(allocateToBuffer(insp.getComponent())){
+                    insp.giveComponent();
+                    insp.setBlocked(false);
+                    insp.setInspecting(false);
+                }
+            }
             if (!insp.isInspecting()) {
                 insp.acceptComponent(this.generateComponent(insp.getNum()));
                 futureEventList.add(new Event(this.generateServiceTime() + clock, Entity.Inspector, insp.getNum()));
+                System.out.println("Time: " +clock+ " : Inspector "+ insp.getNum()+" Inspecting Component " + insp.getComponent().getNum());
+                insp.setInspecting(true);
             }
         }
 
@@ -160,6 +172,8 @@ public class Sim {
                     for (Buffer buffer : tempArray) {
                         work.addComponent(buffer.getCompBuffer().remove());
                     }
+                    work.setWorking(true);
+                    System.out.println("Time: " +clock+ " : WorkStation "+ work.getNum()+" started working ");
                     futureEventList.add(new Event(generateServiceTime() + clock, Entity.Workstation, work.getNum()));
 
                 }

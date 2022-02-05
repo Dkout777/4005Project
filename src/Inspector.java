@@ -33,6 +33,10 @@ public class Inspector {
     public Component getComponent() {
         return component;
     }
+    public void setInspecting(boolean inspecting) {
+        this.inspecting = inspecting;
+    }
+
 
 
 }
