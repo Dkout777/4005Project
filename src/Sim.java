@@ -1,6 +1,4 @@
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Random;
 
@@ -8,7 +6,7 @@ public class Sim {
 
     private int componentsCompleted = 0;
     private int end;
-
+    int productsCompleted = 0;
 
     private int clock;
     private ArrayList<Inspector> inspectors = new ArrayList<Inspector>();
@@ -24,7 +22,6 @@ public class Sim {
         inspectors.add(insp1);
         Inspector insp2 = new Inspector(2);
         inspectors.add(insp2);
-
         WorkStation workStation1 = new WorkStation(1, new boolean[]{true, false, false});
         workStations.add(workStation1);
         WorkStation workStation2 = new WorkStation(2, new boolean[]{true, true, false});
@@ -66,6 +63,7 @@ public class Sim {
             this.update();
         }
         System.out.println("made "+this.getComponentsCompleted() + " Components" );
+        System.out.println("made "+productsCompleted + " products" );
         for (Buffer buffer: buffers) {
             System.out.println("Buffer " +buffer.getComponentNum()+ " for workstation"+ buffer.getWorkStation()+" contains");
             for (Component comp: buffer.getCompBuffer()) {
@@ -91,13 +89,8 @@ public class Sim {
             return;
         }
         updateCurrentEvent(currentEvent);
-
-        for(Inspector insp:inspectors) {
-            if (!insp.isInspecting()) {
-                insp.acceptComponent(this.generateComponent(insp.getNum()));
-                futureEventList.add(new Event(this.generateServiceTime() + clock, Entity.Inspector, insp.getNum()));
-            }
-        }
+        updateWorkStations();
+        updateInspectors();
     }
 
     /**
@@ -124,9 +117,53 @@ public class Sim {
 
                 }
             }
-            futureEventList.remove(0);
-            futureEventList.sort(Comparator.comparingInt(Event::getTime));
 
+        }
+        if(currentEvent.getEntity() == Entity.Workstation){
+            for(WorkStation workStation: workStations){
+                if(currentEvent.getNum() == workStation.num){
+                    workStation.clearComponents();
+                    System.out.println("Workstation " + workStation.getNum()+" produced a product "+" :" + clock + " :" + currentEvent.getTime());
+                    productsCompleted++;
+                    workStation.setWorking(false);
+                }
+            }
+        }
+        futureEventList.remove(0);
+        futureEventList.sort(Comparator.comparingInt(Event::getTime));
+    }
+    public void updateInspectors(){
+        for(Inspector insp:inspectors) {
+            if (!insp.isInspecting()) {
+                insp.acceptComponent(this.generateComponent(insp.getNum()));
+                futureEventList.add(new Event(this.generateServiceTime() + clock, Entity.Inspector, insp.getNum()));
+            }
+        }
+
+    }
+    public void updateWorkStations(){
+        for (WorkStation work: workStations) {
+            if (!work.isWorking()) {
+                ArrayList<Buffer> tempArray = new ArrayList<Buffer>();
+                for (Buffer buffer : buffers) {
+                    if (buffer.getWorkStation() == work.getNum()) {
+                        tempArray.add(buffer);
+                    }
+                }
+                Boolean check = true;
+                for (Buffer buffer : tempArray) {
+                    if (buffer.getBufferSize() == 0) {
+                        check = false;
+                    }
+                }
+                if (check) {
+                    for (Buffer buffer : tempArray) {
+                        work.addComponent(buffer.getCompBuffer().remove());
+                    }
+                    futureEventList.add(new Event(generateServiceTime() + clock, Entity.Workstation, work.getNum()));
+
+                }
+            }
         }
     }
     public boolean allocateToBuffer(Component component){
