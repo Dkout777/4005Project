@@ -121,9 +121,20 @@ public class Sim {
     public int generateInspectorServiceTime() {
         return new Random().nextInt(10) +1;
     }
+
+    /**
+     * This generates a random number between 1 and 10 to use as a service time. This is temporary until the data
+     * collection phase is done.
+     * @return
+     */
     public int generateWorkstationServiceTime() {
         return new Random().nextInt(10) +1;
     }
+
+    /**
+     * Main update function, runs 3 sub functions, cancels out if future eventlist size == 0 or if the next events time
+     * is ahead of the end time
+     */
     public void update() {
         if(futureEventList.size() == 0){
             clock = end;

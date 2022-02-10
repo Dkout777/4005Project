@@ -30,25 +30,43 @@ public class Inspector {
         inspecting = false;
         return give;
     }
+
     public void setIdleStart(int idleStart) {
         this.idleStart = idleStart;
     }
+
+
     public void setBlocked(boolean bool){
         blocked = bool;
     }
+
+
     public boolean getBlocked(){
         return blocked;
     }
+
+
     public boolean isInspecting(){return inspecting;}
+
+
     public int getNum(){
         return num;
     }
+
+
     public Component getComponent() {
         return component;
     }
+
+
     public void setInspecting(boolean inspecting) {
         this.inspecting = inspecting;
     }
+
+    /**
+     * Gets  called when no longer blocked, idle start time gets subtracted  from end time and adds it to idleTime
+     * @param idleEnd end of idle time
+     */
     public void addIdle(int idleEnd){
         idleTime = idleTime + (idleEnd-idleStart);
         idleStart = -1;
