@@ -10,10 +10,20 @@ public class Inspector {
         this.blocked = false;
         inspecting = false;
     }
+
+    /**
+     * Accepts component and sets inspecting to true
+     * @param component component accepted
+     */
     public void acceptComponent(Component component){
         this.component = component;
         inspecting = true;
     }
+
+    /**
+     * returns components and clears it, and sets inspecting to false.
+     * @return
+     */
     public Component giveComponent(){
         Component give = this.component;
         this.component = null;

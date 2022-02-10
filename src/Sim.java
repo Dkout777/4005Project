@@ -5,10 +5,12 @@ import java.util.Random;
 public class Sim {
 
     private int componentsCompleted = 0;
+    //Time the simulation will end
     private int end;
+    // counter for each product type;
     int productsCompleted[] = {0,0,0};
-
     private int clock;
+    //Lists for  each type of entity
     private ArrayList<Inspector> inspectors = new ArrayList<Inspector>();
     private ArrayList<WorkStation> workStations = new ArrayList<WorkStation>();
     private ArrayList<Buffer> buffers = new ArrayList<Buffer>();
