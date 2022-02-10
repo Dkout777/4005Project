@@ -82,6 +82,14 @@ public class Sim {
                 insp.addIdle(end);
             }
         }
+        for(Buffer buffer: buffers){
+            buffer.topOffTime(clock);
+        }
+        for(WorkStation workStation: workStations){
+            if(workStation.isWorking()){
+                workStation.setWorking(false, clock);
+            }
+        }
         System.out.println("----------------statistics-------------" );
         System.out.println("Inspected "+this.getComponentsCompleted() + " Components" );
         System.out.println("Workstation 1 made  "+productsCompleted[0] + " products" );
@@ -89,14 +97,15 @@ public class Sim {
         System.out.println("Workstation 3 made "+productsCompleted[2] + " products" );
         System.out.println("Product throughput was "+(float)(productsCompleted[0] + productsCompleted[1] + productsCompleted[2])/end);
         for (Buffer buffer: buffers) {
-            System.out.println("Buffer " +buffer.getComponentNum()+ " for workstation"+ buffer.getWorkStation()+" contains");
-            for (Component comp: buffer.getCompBuffer()) {
-                System.out.println("comp " + comp.getNum() );
-            }
+            System.out.println("Buffer " +buffer.getComponentNum()+ " for workstation "+ buffer.getWorkStation());
+            System.out.println("was empty for " + buffer.getTimes()[0]+", half full for " + buffer.getTimes()[1] + ", full for "+ buffer.getTimes()[2]);
         }
         for (Inspector insp: inspectors) {
             System.out.println("Inspector "+ insp.getNum() + " Idle time was " + insp.getIdleTime());
 
+        }
+        for(WorkStation work: workStations){
+            System.out.println("Workstation "+ work.getNum() + " was working for " + work.timeBusy);
         }
 
 
@@ -159,7 +168,7 @@ public class Sim {
                     workStation.clearComponents();
                     System.out.println("Time: " +clock+ " : Workstation "+ workStation.getNum()+" Finished making a product ");
                     productsCompleted[workStation.num-1]++;
-                    workStation.setWorking(false);
+                    workStation.setWorking(false, clock);
                 }
             }
         }
@@ -216,9 +225,9 @@ public class Sim {
                 }
                 if (check) {
                     for (Buffer buffer : tempArray) {
-                        work.addComponent(buffer.getCompBuffer().remove());
+                        work.addComponent(buffer.removeComponent(clock));
                     }
-                    work.setWorking(true);
+                    work.setWorking(true, clock);
                     System.out.println("Time: " +clock+ " : WorkStation "+ work.getNum()+" started working ");
                     futureEventList.add(new Event(generateWorkstationServiceTime() + clock, Entity.Workstation, work.getNum()));
 
@@ -243,12 +252,12 @@ public class Sim {
         }
         checkArray.sort(Comparator.comparingInt(Buffer::getBufferSize));
         for (Buffer sortedBuffer:checkArray) {
-            System.out.println(sortedBuffer.getBufferSize());
+            // System.out.println(sortedBuffer.getBufferSize());
         }
         for (Buffer sortedBuffer:checkArray) {
             if(sortedBuffer.getBufferSize() < 2){
                 System.out.println("added to buffer " + sortedBuffer.getComponentNum() +" Belonging to Workstation " +  sortedBuffer.getWorkStation());
-                sortedBuffer.addComponent(component);
+                sortedBuffer.addComponent(component, clock);
                 return true;
             }
         }

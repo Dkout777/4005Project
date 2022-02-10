@@ -3,6 +3,8 @@ import java.util.ArrayList;
 
 public class WorkStation {
     int num;
+    int timeBusy = 0;
+    int timeStarted;
     boolean components [];
     ArrayList<Component> componentList = new ArrayList<Component>();
     boolean working;
@@ -23,8 +25,18 @@ public class WorkStation {
     public void clearComponents(){
         componentList.clear();
     }
-    public void setWorking(boolean bool){
-        working = bool;
+    public void setWorking(boolean working, int clock){
+
+        this.working = working;
+        if(working == false){
+            timeBusy = timeBusy + (clock - timeStarted);
+        }
+        else{
+            timeStarted = clock;
+        }
+    }
+    public int getTimeBusy(){
+        return timeBusy;
     }
     public boolean isWorking(){
         return working;
