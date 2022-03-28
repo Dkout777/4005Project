@@ -21,8 +21,8 @@ public class Sim {
     private  double randomNums[];
     private int pos = 0;
     private final DecimalFormat numberFormat = new DecimalFormat("#0.000");
-    public Sim(int end) {
-        randomNums = generator.randNumGen(end, 100);
+    public Sim(int end, int seed) {
+        randomNums = generator.randNumGen(end, seed);
         clock = 0;
         this.end = end;
         Inspector insp1 = new Inspector(1);
@@ -321,7 +321,7 @@ public class Sim {
 
 
     public static void main(String[] args) {
-        Sim mainSimulation = new Sim(1000);
+        Sim mainSimulation = new Sim(1000, 100);
         mainSimulation.initialize();
 
 
