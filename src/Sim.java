@@ -306,8 +306,8 @@ public class Sim {
             return (new Component(1));
         }
         else{
-            Random randomnum = new Random();
-            double temp = randomnum.nextDouble();
+            double temp = randomNums[pos];
+            pos++;
             if(temp <= 0.5){
                 return new Component(2);
             }else{
