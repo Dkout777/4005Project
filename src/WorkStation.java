@@ -2,17 +2,22 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class WorkStation {
+    int type;
     int num;
-    int timeBusy = 0;
+    double timeBusy = 0;
     //Start time of work
-    int timeStarted;
+    double timeStarted;
     boolean components [];
     ArrayList<Component> componentList = new ArrayList<Component>();
     boolean working;
-    public WorkStation(int num, boolean components[]){
+    public WorkStation(int num, boolean components[], int type){
+        this.type = type;
         this.num = num;
         this.components = components;
         working = false;
+    }
+    public  int getType(){
+        return type;
     }
     public boolean[] getComponents() {
         return components;
@@ -32,7 +37,7 @@ public class WorkStation {
      * @param working boolean setting if it's working
      * @param clock the clock at which it starts or stops working
      */
-    public void setWorking(boolean working, int clock){
+    public void setWorking(boolean working, double clock){
 
         this.working = working;
         if(working == false){
@@ -42,7 +47,7 @@ public class WorkStation {
             timeStarted = clock;
         }
     }
-    public int getTimeBusy(){
+    public double getTimeBusy(){
         return timeBusy;
     }
     public boolean isWorking(){

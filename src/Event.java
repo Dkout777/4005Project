@@ -1,15 +1,15 @@
 enum Entity{Inspector, Workstation}
 public class Event {
-    private int time; //Time at which event finishes
+    private double time; //Time at which event finishes
     private Entity entity; // whether event is inspector or workstation
     private int num;// number of inspector or workstation
 
-    public Event(int time, Entity entity, int num){
+    public Event(double time, Entity entity, int num){
        this.time = time;
        this.entity = entity;
        this.num = num;
     }
-    public int getTime() {
+    public double getTime() {
         return time;
     }
     public void setTime(int time) {

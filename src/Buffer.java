@@ -5,9 +5,9 @@ public class Buffer {
   int workStation;
   int componentNum;
   //Sum representing how long it has 0, 1, 2 components
-  int times [] = {0,0,0};
+  double times [] = {0,0,0};
   //time at which the most recent component has been added
-  int timeStarted = 0;
+  double timeStarted = 0;
 
   Queue<Component> compBuffer = new LinkedList<Component>();
   public Buffer(int workStation, int componentNum){
@@ -26,7 +26,7 @@ public class Buffer {
    * @param added added component
    * @param timeAdded clock at which it was added
    */
-  public  void addComponent(Component added, int timeAdded){
+  public  void addComponent(Component added, double timeAdded){
     times[compBuffer.size()] = times[compBuffer.size()] + (timeAdded-timeStarted);
     timeStarted = timeAdded;
     compBuffer.add(added);
@@ -43,13 +43,13 @@ public class Buffer {
    * @param timeRemoved clock time at which the component is removed
    * @return
    */
-  public Component removeComponent(int timeRemoved){
+  public Component removeComponent(double timeRemoved){
     times[compBuffer.size()] = times[compBuffer.size()] + (timeRemoved-timeStarted);
     timeStarted = timeRemoved;
     Component removed = compBuffer.remove();
     return  removed;
   }
-  public int[] getTimes() {
+  public double[] getTimes() {
     return times;
   }
 
@@ -58,7 +58,7 @@ public class Buffer {
    * function gets called.
    * @param timeEnded clock at which simulation ended
    */
-  public void topOffTime(int timeEnded){
+  public void topOffTime(double timeEnded){
     times[compBuffer.size()] = times[compBuffer.size()] + (timeEnded-timeStarted);
   }
 

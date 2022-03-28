@@ -1,3 +1,4 @@
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Random;
@@ -6,29 +7,33 @@ public class Sim {
 
     private int componentsCompleted = 0;
     //Time the simulation will end
-    private int end;
+    private double end;
     // counter for each product type;
     int productsCompleted[] = {0,0,0};
-    private int clock;
+    private double clock;
     //Lists for  each type of entity
     private ArrayList<Inspector> inspectors = new ArrayList<Inspector>();
     private ArrayList<WorkStation> workStations = new ArrayList<WorkStation>();
     private ArrayList<Buffer> buffers = new ArrayList<Buffer>();
     public ArrayList<Event> futureEventList = new ArrayList<Event>();
     private Random rand = new Random();
-
+    private RandomInputGenerator generator = new RandomInputGenerator();
+    private  double randomNums[];
+    private int pos = 0;
+    private final DecimalFormat numberFormat = new DecimalFormat("#0.000");
     public Sim(int end) {
+        randomNums = generator.randNumGen(end, 100);
         clock = 0;
         this.end = end;
         Inspector insp1 = new Inspector(1);
         inspectors.add(insp1);
         Inspector insp2 = new Inspector(2);
         inspectors.add(insp2);
-        WorkStation workStation1 = new WorkStation(1, new boolean[]{true, false, false});
+        WorkStation workStation1 = new WorkStation(1, new boolean[]{true, false, false},3 );
         workStations.add(workStation1);
-        WorkStation workStation2 = new WorkStation(2, new boolean[]{true, true, false});
+        WorkStation workStation2 = new WorkStation(2, new boolean[]{true, true, false}, 4);
         workStations.add(workStation2);
-        WorkStation workStation3 = new WorkStation(3, new boolean[]{true, false, true});
+        WorkStation workStation3 = new WorkStation(3, new boolean[]{true, false, true},5);
         workStations.add(workStation3);
         for (WorkStation work: workStations) {
             if(work.getComponents()[0]){
@@ -47,11 +52,11 @@ public class Sim {
         return componentsCompleted;
     }
 
-    public int getClock() {
+    public double getClock() {
         return clock;
     }
 
-    public int getEnd() {
+    public double getEnd() {
         return end;
     }
 
@@ -62,10 +67,10 @@ public class Sim {
     public void initialize() {
         for (Inspector inspector : inspectors) {
             inspector.acceptComponent(this.generateComponent(inspector.getNum()));
-            System.out.println("Time: " +clock+ " : Inspector "+ inspector.getNum()+" Started inspecting Component " + inspector.getComponent().getNum());
-            futureEventList.add(new Event(generateInspectorServiceTime() + clock, Entity.Inspector, inspector.getNum()));
+            System.out.println("Time: " +numberFormat.format(clock)+ " : Inspector "+ inspector.getNum()+" Started inspecting Component " + inspector.getComponent().getNum());
+            futureEventList.add(new Event(generateServiceTime(inspector.getType()) + clock, Entity.Inspector, inspector.getNum()));
         }
-        futureEventList.sort(Comparator.comparingInt(Event::getTime));
+        futureEventList.sort(Comparator.comparingDouble(Event::getTime));
         // THe main simulation loop, it lasts until the clock reaches end
         int x = 0;
         while(this.getClock() < this.getEnd()){
@@ -73,7 +78,7 @@ public class Sim {
            // if(futureEventList.size()>0)
                // System.out.println("current event: "+futureEventList.get(0).eventToString());
             this.update();
-            futureEventList.sort(Comparator.comparingInt(Event::getTime));
+            futureEventList.sort(Comparator.comparingDouble(Event::getTime));
            // if(futureEventList.size()>0)
               //  System.out.println("Next event: "+futureEventList.get(0).eventToString());
            // x++;
@@ -97,17 +102,17 @@ public class Sim {
         System.out.println("Workstation 1 made  "+productsCompleted[0] + " products" );
         System.out.println("Workstation 2 made  "+productsCompleted[1] + " products" );
         System.out.println("Workstation 3 made "+productsCompleted[2] + " products" );
-        System.out.println("Product throughput was "+(float)(productsCompleted[0] + productsCompleted[1] + productsCompleted[2])/end);
+        System.out.println("Product throughput was "+(double)(productsCompleted[0] + productsCompleted[1] + productsCompleted[2])/end);
         for (Buffer buffer: buffers) {
             System.out.println("Buffer " +buffer.getComponentNum()+ " for workstation "+ buffer.getWorkStation());
-            System.out.println("was empty for " + buffer.getTimes()[0]+", half full for " + buffer.getTimes()[1] + ", full for "+ buffer.getTimes()[2]);
+            System.out.println("was empty for " +numberFormat.format( buffer.getTimes()[0])+", half full for " + numberFormat.format( buffer.getTimes()[1]) + ", full for "+ numberFormat.format( buffer.getTimes()[2]));
         }
         for (Inspector insp: inspectors) {
-            System.out.println("Inspector "+ insp.getNum() + " Idle time was " + insp.getIdleTime());
+            System.out.println("Inspector "+ insp.getNum() + " Idle time was " +numberFormat.format( insp.getIdleTime()));
 
         }
         for(WorkStation work: workStations){
-            System.out.println("Workstation "+ work.getNum() + " was working for " + work.timeBusy);
+            System.out.println("Workstation "+ work.getNum() + " was working for " + numberFormat.format(work.timeBusy));
         }
 
 
@@ -129,6 +134,13 @@ public class Sim {
      */
     public int generateWorkstationServiceTime() {
         return new Random().nextInt(10) +1;
+    }
+    public double generateServiceTime(int type) {
+        double value;
+        value = generator.generateVariate(type, randomNums[pos]);
+        pos++;
+        return value;
+
     }
 
     /**
@@ -160,7 +172,7 @@ public class Sim {
         if (currentEvent.getEntity() == Entity.Inspector) {
             for (Inspector insp : inspectors) {
                 if (insp.getNum() == currentEvent.getNum()) {
-                    System.out.println("Time: " +clock+ " : Inspector "+ insp.getNum()+" Finished Inspecting Component " + insp.getComponent().getNum());
+                    System.out.println("Time: " +numberFormat.format( clock)+ " : Inspector "+ insp.getNum()+" Finished Inspecting Component " + insp.getComponent().getNum());
                     componentsCompleted++;
                     if(allocateToBuffer(insp.getComponent())){
                       insp.giveComponent();
@@ -168,7 +180,7 @@ public class Sim {
                     else{
                         insp.setBlocked(true);
                         insp.setIdleStart(clock);
-                        System.out.println("Time: " +clock+ " : Inspector "+ insp.getNum()+" is blocked ");
+                        System.out.println("Time: " +numberFormat.format( clock)+ " : Inspector "+ insp.getNum()+" is blocked ");
                     }
 
                 }
@@ -179,14 +191,14 @@ public class Sim {
             for(WorkStation workStation: workStations){
                 if(currentEvent.getNum() == workStation.num){
                     workStation.clearComponents();
-                    System.out.println("Time: " +clock+ " : Workstation "+ workStation.getNum()+" Finished making a product ");
+                    System.out.println("Time: " +numberFormat.format( clock)+ " : Workstation "+ workStation.getNum()+" Finished making a product ");
                     productsCompleted[workStation.num-1]++;
                     workStation.setWorking(false, clock);
                 }
             }
         }
         futureEventList.remove(0);
-        futureEventList.sort(Comparator.comparingInt(Event::getTime));
+        futureEventList.sort(Comparator.comparingDouble(Event::getTime));
     }
 
     /**
@@ -201,23 +213,23 @@ public class Sim {
                     insp.giveComponent();
                     insp.setBlocked(false);
                     insp.addIdle(clock);
-                    System.out.println("Time: " +clock+ " : Inspector "+ insp.getNum()+" is unblocked ");
+                    System.out.println("Time: " +numberFormat.format( clock)+ " : Inspector "+ insp.getNum()+" is unblocked ");
                     insp.acceptComponent(this.generateComponent(insp.getNum()));
-                    futureEventList.add(new Event(this.generateInspectorServiceTime() + clock, Entity.Inspector, insp.getNum()));
-                    System.out.println("Time: " +clock+ " : Inspector "+ insp.getNum()+" Started inspecting Component " + insp.getComponent().getNum());
+                    futureEventList.add(new Event(this.generateServiceTime(insp.getType()) + clock, Entity.Inspector, insp.getNum()));
+                    System.out.println("Time: " +numberFormat.format( clock)+ " : Inspector "+ insp.getNum()+" Started inspecting Component " + insp.getComponent().getNum());
                 }
             }
             else if (!insp.isInspecting()) {
                 insp.acceptComponent(this.generateComponent(insp.getNum()));
-                futureEventList.add(new Event(this.generateInspectorServiceTime() + clock, Entity.Inspector, insp.getNum()));
-                System.out.println("Time: " +clock+ " : Inspector "+ insp.getNum()+" Started inspecting Component " + insp.getComponent().getNum());
+                futureEventList.add(new Event(this.generateServiceTime(insp.getType()) + clock, Entity.Inspector, insp.getNum()));
+                System.out.println("Time: " +numberFormat.format( clock)+ " : Inspector "+ insp.getNum()+" Started inspecting Component " + insp.getComponent().getNum());
             }
         }
 
     }
 
     /**
-     * This method is responsible for updating the workstations, it loops through an checks if they aren't working, if
+     * This method is responsible for updating the workstations, it loops through and checks if they aren't working, if
      * not it will loop through it's buffers to check if it can start. If each buffer has at least 1 item, it will
      * remove 1 item from each buffer and add them to the workstation array, and set itself to working.
      */
@@ -241,8 +253,8 @@ public class Sim {
                         work.addComponent(buffer.removeComponent(clock));
                     }
                     work.setWorking(true, clock);
-                    System.out.println("Time: " +clock+ " : WorkStation "+ work.getNum()+" started working ");
-                    futureEventList.add(new Event(generateWorkstationServiceTime() + clock, Entity.Workstation, work.getNum()));
+                    System.out.println("Time: " +numberFormat.format( clock)+ " : WorkStation "+ work.getNum()+" started working ");
+                    futureEventList.add(new Event(generateServiceTime(work.getType()) + clock, Entity.Workstation, work.getNum()));
 
                 }
             }
