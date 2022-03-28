@@ -114,6 +114,13 @@ public class Sim {
         for(WorkStation work: workStations){
             System.out.println("Workstation "+ work.getNum() + " was working for " + numberFormat.format(work.timeBusy));
         }
+        int z = 0;
+        for(WorkStation work: workStations){
+
+            double sampleMean = work.timeBusy/productsCompleted[z];
+            System.out.println("Workstation "+ work.getNum() + " Sample mean " + numberFormat.format(sampleMean));
+            z++;
+        }
 
 
     }
