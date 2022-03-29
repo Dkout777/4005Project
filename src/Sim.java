@@ -70,6 +70,7 @@ public class Sim {
         for (Inspector inspector : inspectors) {
             inspector.acceptComponent(this.generateComponent(inspector.getNum()));
             System.out.println("Time: " +numberFormat.format(clock)+ " : Inspector "+ inspector.getNum()+" Started inspecting Component " + inspector.getComponent().getNum());
+            data.setWorkingStartTimes(inspector.getComponent().num, clock);
             futureEventList.add(new Event(generateServiceTime(inspector.getType()) + clock, Entity.Inspector, inspector.getNum()));
         }
         futureEventList.sort(Comparator.comparingDouble(Event::getTime));
@@ -90,6 +91,9 @@ public class Sim {
             if(insp.getBlocked()){
                 insp.addIdle(end);
             }
+            /*else if(insp.isInspecting()){
+                data.addWorkingTimes(insp.getComponent().getNum(),end);
+            }*/
         }
         for(Buffer buffer: buffers){
             buffer.topOffTime(clock);
@@ -130,6 +134,16 @@ public class Sim {
             double sampleMean = work.timeBusy/productsCompleted[z];
             System.out.println("Workstation "+ work.getNum() + " Sample mean " + numberFormat.format(sampleMean));
             z++;
+        }
+        int i = 1;
+        for (double num: data.getComponentWorkTimes()) {
+            System.out.println("Component " +i+ " worked for " + numberFormat.format(num));
+            i++;
+        }
+        i = 1;
+        for (int num: data.getInspectedComponents()) {
+            System.out.println("Component " +i+ " inspected " + num);
+            i++;
         }
         System.out.println("---------------------------------");
         data.setThroughPut((productsCompleted[0] + productsCompleted[1] + productsCompleted[2])/end);
@@ -196,6 +210,8 @@ public class Sim {
             for (Inspector insp : inspectors) {
                 if (insp.getNum() == currentEvent.getNum()) {
                     System.out.println("Time: " +numberFormat.format( clock)+ " : Inspector "+ insp.getNum()+" Finished Inspecting Component " + insp.getComponent().getNum());
+                    data.addWorkingTimes(insp.getComponent().getNum(),clock);
+                    data.addInspectedComponents(insp.getComponent().getNum());
                     componentsCompleted++;
                     if(allocateToBuffer(insp.getComponent())){
                       insp.giveComponent();
@@ -238,12 +254,14 @@ public class Sim {
                     insp.addIdle(clock);
                     System.out.println("Time: " +numberFormat.format( clock)+ " : Inspector "+ insp.getNum()+" is unblocked ");
                     insp.acceptComponent(this.generateComponent(insp.getNum()));
+                    data.setWorkingStartTimes(insp.getComponent().getNum(), clock);
                     futureEventList.add(new Event(this.generateServiceTime(insp.getType()) + clock, Entity.Inspector, insp.getNum()));
                     System.out.println("Time: " +numberFormat.format( clock)+ " : Inspector "+ insp.getNum()+" Started inspecting Component " + insp.getComponent().getNum());
                 }
             }
             else if (!insp.isInspecting()) {
                 insp.acceptComponent(this.generateComponent(insp.getNum()));
+                data.setWorkingStartTimes(insp.getComponent().getNum(), clock);
                 futureEventList.add(new Event(this.generateServiceTime(insp.getType()) + clock, Entity.Inspector, insp.getNum()));
                 System.out.println("Time: " +numberFormat.format( clock)+ " : Inspector "+ insp.getNum()+" Started inspecting Component " + insp.getComponent().getNum());
             }
@@ -341,7 +359,7 @@ public class Sim {
 
     public static void main(String[] args) {
         RandomInputGenerator x = new RandomInputGenerator();
-        Sim mainSimulation = new Sim(1000, 0,x.randNumGen(1000,288));
+        Sim mainSimulation = new Sim(1000, 0,x.randNumGen(1000,287));
         mainSimulation.initialize();
 
 
