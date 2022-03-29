@@ -81,7 +81,7 @@ public class RandomInputGenerator {
     }
     public static void main(String[] args) {
         RandomInputGenerator x = new RandomInputGenerator();
-        double[] nums = x.randNumGen(20,100);
+        double[] nums = x.randNumGen(20,300);
         for (double num: nums) {
             System.out.println(num);
         }/*

@@ -19,10 +19,12 @@ public class Sim {
     private Random rand = new Random();
     private RandomInputGenerator generator = new RandomInputGenerator();
     private  double randomNums[];
-    private int pos = 0;
+    private int pos;
+    private SimData data = new SimData();
     private final DecimalFormat numberFormat = new DecimalFormat("#0.000");
-    public Sim(int end, int seed) {
-        randomNums = generator.randNumGen(end, seed);
+    public Sim(int end, int pos, double[] randomNums) {
+        this.pos = pos;
+        this.randomNums = randomNums;
         clock = 0;
         this.end = end;
         Inspector insp1 = new Inspector(1);
@@ -64,7 +66,7 @@ public class Sim {
      * this method initializes the simulation, first by giving the inspectors a component and then running the update
      * function until the time runs out.
      */
-    public void initialize() {
+    public SimData initialize() {
         for (Inspector inspector : inspectors) {
             inspector.acceptComponent(this.generateComponent(inspector.getNum()));
             System.out.println("Time: " +numberFormat.format(clock)+ " : Inspector "+ inspector.getNum()+" Started inspecting Component " + inspector.getComponent().getNum());
@@ -98,6 +100,10 @@ public class Sim {
             }
         }
         System.out.println("----------------statistics-------------" );
+        //data.setBuffers( buffers);
+        ArrayList<Double> idleTimes = new ArrayList<>();
+        ArrayList<Double> workingTimes = new ArrayList<>();
+        ArrayList<Double> avgBufferCapacity = new ArrayList<>();
         System.out.println("Inspected "+this.getComponentsCompleted() + " Components" );
         System.out.println("Workstation 1 made  "+productsCompleted[0] + " products" );
         System.out.println("Workstation 2 made  "+productsCompleted[1] + " products" );
@@ -106,12 +112,16 @@ public class Sim {
         for (Buffer buffer: buffers) {
             System.out.println("Buffer " +buffer.getComponentNum()+ " for workstation "+ buffer.getWorkStation());
             System.out.println("was empty for " +numberFormat.format( buffer.getTimes()[0])+", half full for " + numberFormat.format( buffer.getTimes()[1]) + ", full for "+ numberFormat.format( buffer.getTimes()[2]));
+            System.out.println("On avg: " + ((0*buffer.getTimes()[0] +1*buffer.getTimes()[1] + 2*buffer.getTimes()[2])/end ));
+            avgBufferCapacity.add(((0*buffer.getTimes()[0] +1*buffer.getTimes()[1] + 2*buffer.getTimes()[2])/(end)));
         }
         for (Inspector insp: inspectors) {
+            idleTimes.add(insp.getIdleTime());
             System.out.println("Inspector "+ insp.getNum() + " Idle time was " +numberFormat.format( insp.getIdleTime()));
 
         }
         for(WorkStation work: workStations){
+            workingTimes.add(work.timeBusy);
             System.out.println("Workstation "+ work.getNum() + " was working for " + numberFormat.format(work.timeBusy));
         }
         int z = 0;
@@ -121,8 +131,14 @@ public class Sim {
             System.out.println("Workstation "+ work.getNum() + " Sample mean " + numberFormat.format(sampleMean));
             z++;
         }
-
-
+        System.out.println("---------------------------------");
+        data.setThroughPut((productsCompleted[0] + productsCompleted[1] + productsCompleted[2])/end);
+        data.setComponentsInspected(getComponentsCompleted());
+        data.setWorkStationProducts(productsCompleted);
+        data.setAvgCapacity(avgBufferCapacity);
+        data.setIdleTimes(idleTimes);
+        data.setWorkingTimes(workingTimes);
+        return data;
     }
 
     /**
@@ -315,13 +331,17 @@ public class Sim {
             }
         }
     }
+    public int getPos() {
+        return pos;
+    }
 
 
 
 
 
     public static void main(String[] args) {
-        Sim mainSimulation = new Sim(1000, 100);
+        RandomInputGenerator x = new RandomInputGenerator();
+        Sim mainSimulation = new Sim(1000, 0,x.randNumGen(1000,288));
         mainSimulation.initialize();
 
 
