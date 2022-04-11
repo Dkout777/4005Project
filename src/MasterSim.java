@@ -18,7 +18,7 @@ public class MasterSim {
     }
     public void initialize() throws IOException {
         for (int x =0; x < replications; x ++ ){
-            Sim sim = new Sim(end,pos, randNums);
+            Sim sim = new Sim(end,pos, randNums, false);
             datas.add(sim.initialize());
             pos = sim.getPos();
         }

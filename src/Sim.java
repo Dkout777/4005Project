@@ -1,10 +1,11 @@
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Random;
 
 public class Sim {
-
+    private boolean alternate;
     private int componentsCompleted = 0;
     //Time the simulation will end
     private double end;
@@ -22,7 +23,8 @@ public class Sim {
     private int pos;
     private SimData data = new SimData();
     private final DecimalFormat numberFormat = new DecimalFormat("#0.000");
-    public Sim(int end, int pos, double[] randomNums) {
+    public Sim(int end, int pos, double[] randomNums, boolean alternate) {
+        this.alternate = alternate;
         this.pos = pos;
         this.randomNums = randomNums;
         clock = 0;
@@ -73,7 +75,7 @@ public class Sim {
             data.setWorkingStartTimes(inspector.getComponent().num, clock);
             futureEventList.add(new Event(generateServiceTime(inspector.getType()) + clock, Entity.Inspector, inspector.getNum()));
         }
-        futureEventList.sort(Comparator.comparingDouble(Event::getTime));
+
         // THe main simulation loop, it lasts until the clock reaches end
         int x = 0;
         while(this.getClock() < this.getEnd()){
@@ -109,6 +111,16 @@ public class Sim {
         ArrayList<Double> workingTimes = new ArrayList<>();
         ArrayList<Double> avgBufferCapacity = new ArrayList<>();
         System.out.println("Inspected "+this.getComponentsCompleted() + " Components" );
+        int i = 1;
+        for (double num: data.getComponentWorkTimes()) {
+            System.out.println("Component " +i+ " worked for " + numberFormat.format(num));
+            i++;
+        }
+        i = 1;
+        for (int num: data.getInspectedComponents()) {
+            System.out.println("Component " +i+ " inspected " + num);
+            i++;
+        }
         System.out.println("Workstation 1 made  "+productsCompleted[0] + " products" );
         System.out.println("Workstation 2 made  "+productsCompleted[1] + " products" );
         System.out.println("Workstation 3 made "+productsCompleted[2] + " products" );
@@ -135,16 +147,7 @@ public class Sim {
             System.out.println("Workstation "+ work.getNum() + " Sample mean " + numberFormat.format(sampleMean));
             z++;
         }
-        int i = 1;
-        for (double num: data.getComponentWorkTimes()) {
-            System.out.println("Component " +i+ " worked for " + numberFormat.format(num));
-            i++;
-        }
-        i = 1;
-        for (int num: data.getInspectedComponents()) {
-            System.out.println("Component " +i+ " inspected " + num);
-            i++;
-        }
+
         System.out.println("---------------------------------");
         data.setThroughPut((productsCompleted[0] + productsCompleted[1] + productsCompleted[2])/end);
         data.setComponentsInspected(getComponentsCompleted());
@@ -316,15 +319,30 @@ public class Sim {
                 checkArray.add(buffer);
             }
         }
-        checkArray.sort(Comparator.comparingInt(Buffer::getBufferSize));
+
         for (Buffer sortedBuffer:checkArray) {
             // System.out.println(sortedBuffer.getBufferSize());
         }
-        for (Buffer sortedBuffer:checkArray) {
-            if(sortedBuffer.getBufferSize() < 2){
-                System.out.println("added to buffer " + sortedBuffer.getComponentNum() +" Belonging to Workstation " +  sortedBuffer.getWorkStation());
-                sortedBuffer.addComponent(component, clock);
-                return true;
+        if(alternate){
+            Collections.reverse(checkArray);
+            checkArray.sort(Comparator.comparingInt(Buffer::getBufferSize));
+            for (Buffer sortedBuffer : checkArray) {
+                if (sortedBuffer.getBufferSize() < 2) {
+                    System.out.println("added to buffer containing comp " + sortedBuffer.getComponentNum() + " Belonging to Workstation " + sortedBuffer.getWorkStation());
+                    sortedBuffer.addComponent(component, clock);
+                    return true;
+                }
+            }
+
+        }
+        else {
+            checkArray.sort(Comparator.comparingInt(Buffer::getBufferSize));
+            for (Buffer sortedBuffer : checkArray) {
+                if (sortedBuffer.getBufferSize() < 2) {
+                    System.out.println("added to buffer containing comp " + sortedBuffer.getComponentNum() + " Belonging to Workstation " + sortedBuffer.getWorkStation());
+                    sortedBuffer.addComponent(component, clock);
+                    return true;
+                }
             }
         }
         return false;
@@ -359,7 +377,7 @@ public class Sim {
 
     public static void main(String[] args) {
         RandomInputGenerator x = new RandomInputGenerator();
-        Sim mainSimulation = new Sim(1000, 0,x.randNumGen(1000,287));
+        Sim mainSimulation = new Sim(10000, 0,x.randNumGen(10000,287), false);
         mainSimulation.initialize();
 
 
